@@ -47,7 +47,7 @@ export default function ButtonGrid({ onButtonClick }: ButtonGridProps) {
     [
       { value: '±', variant: 'function' },
       { value: '0', variant: 'number' },
-      { value: '.', variant: 'number' },
+      { value: '.', variant: 'function' },
       { value: '', variant: 'special', isEmpty: true },
       { value: '=', variant: 'function' }
     ]
@@ -58,7 +58,7 @@ export default function ButtonGrid({ onButtonClick }: ButtonGridProps) {
       {buttons.map((row, i) => (
         <div key={i} className="grid grid-cols-5 gap-[8px]">
           {row.map((btn, j) => (
-            <div key={j} style={{ width: '56px', height: '40px' }}>
+            <div key={j} className="w-[56px] h-[40px]">
               <Button
                 value={btn.value}
                 onClick={() => onButtonClick(btn.value)}
