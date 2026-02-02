@@ -1,4 +1,4 @@
-// src/components/Calculator.tsx
+// app/components/Calculator.tsx
 
 'use client';
 
@@ -11,7 +11,9 @@ export default function Calculator() {
 
   const handleButtonClick = (value: string) => {
     // Temporary - we'll wire this up properly in Step 13
-    if (display === '0') {
+    if (!value) return; // Special button clicked
+    
+    if (display === '0' && value !== '.') {
       setDisplay(value);
     } else {
       setDisplay(display + value);
@@ -19,11 +21,14 @@ export default function Calculator() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6">
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-6 border border-gray-700">
+    <div className="inline-block p-[20px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl shadow-2xl border border-gray-700">
+      {/* Display: 43x9 units = 344px x 72px */}
+      <div style={{ width: '344px', height: '72px', marginBottom: '16px' }}>
         <Display value={display} />
-        <ButtonGrid onButtonClick={handleButtonClick} />
       </div>
+      
+      {/* Button Grid */}
+      <ButtonGrid onButtonClick={handleButtonClick} />
     </div>
   );
 }
