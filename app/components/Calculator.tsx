@@ -2,11 +2,27 @@
 
 'use client';
 
+import { useCallback } from 'react';
 import Display from './ui/Display';
 import ButtonGrid from './ui/ButtonGrid';
+import VolumeSlider from './ui/VolumeSlider';
 import CarbonFibreBackground from './ui/CarbonFibreBackground';
 import { useCalculatorStore } from '@/store/calculatorStore';
+import { useAudioStore } from '@/store/audioStore';
 import { useKeyboard } from '@/hooks/useKeyboard';
+import { useAudio } from '@/hooks/useAudio';
+
+/**
+ * Maps button values to audio sound types
+ * number  → key1.mp3
+ * operator → key2.mp3
+ * function → key3.mp3
+ */
+function getSoundType(value: string): 'number' | 'operator' | 'function' {
+  if (/^[0-9.]$/.test(value)) return 'number';
+  if (['+', '-', 'x', '÷'].includes(value)) return 'operator';
+  return 'function';
+}
 
 export default function Calculator() {
   const { 
@@ -27,8 +43,14 @@ export default function Calculator() {
     reciprocal
   } = useCalculatorStore();
 
-  const handleButtonClick = (value: string) => {
+  const { volume, isMuted } = useAudioStore();
+  const { play } = useAudio(isMuted ? 0 : volume);
+
+  const handleButtonClick = useCallback((value: string) => {
     if (!value) return;
+
+    // Play sound
+    play(getSoundType(value));
     
     if (/^[0-9]$/.test(value)) {
       inputDigit(value);
@@ -90,7 +112,7 @@ export default function Calculator() {
       reciprocal();
       return;
     }
-  };
+  }, [play, inputDigit, inputDecimal, inputOperator, calculate, clear, clearAll, backspace, toggleSign, percentage, square, squareRoot, reciprocal]);
 
   useKeyboard(handleButtonClick);
 
@@ -99,11 +121,12 @@ export default function Calculator() {
       className="inline-block relative rounded-3xl shadow-2xl border border-gray-700 overflow-hidden"
       style={{ padding: '20px' }}
     >
-      {/* Carbon fibre background - locked settings */}
+      {/* Carbon fibre background */}
       <CarbonFibreBackground />
       
       {/* Content layer */}
       <div className="relative z-10">
+        {/* Display */}
         <div style={{ width: '344px', height: '72px', marginBottom: '16px' }}>
           <Display 
             value={display} 
@@ -111,7 +134,14 @@ export default function Calculator() {
             hasError={hasError} 
           />
         </div>
+
+        {/* Button Grid */}
         <ButtonGrid onButtonClick={handleButtonClick} />
+
+        {/* Volume slider - below buttons */}
+        <div className="mt-3 flex justify-end">
+          <VolumeSlider />
+        </div>
       </div>
     </div>
   );
