@@ -4,7 +4,9 @@
 
 import Display from './ui/Display';
 import ButtonGrid from './ui/ButtonGrid';
+import CarbonFibreBackground from './ui/CarbonFibreBackground';
 import { useCalculatorStore } from '@/store/calculatorStore';
+import { useKeyboard } from '@/hooks/useKeyboard';
 
 export default function Calculator() {
   const { 
@@ -26,22 +28,16 @@ export default function Calculator() {
   } = useCalculatorStore();
 
   const handleButtonClick = (value: string) => {
-    // Handle empty special button
     if (!value) return;
     
-    // Numbers
     if (/^[0-9]$/.test(value)) {
       inputDigit(value);
       return;
     }
-    
-    // Decimal point
     if (value === '.') {
       inputDecimal();
       return;
     }
-    
-    // Operators
     if (value === '+') {
       inputOperator('+');
       return;
@@ -58,14 +54,10 @@ export default function Calculator() {
       inputOperator('/');
       return;
     }
-    
-    // Equals
     if (value === '=') {
       calculate();
       return;
     }
-    
-    // Clear functions
     if (value === 'C') {
       clear();
       return;
@@ -78,8 +70,6 @@ export default function Calculator() {
       backspace();
       return;
     }
-    
-    // Advanced functions
     if (value === '±') {
       toggleSign();
       return;
@@ -102,19 +92,27 @@ export default function Calculator() {
     }
   };
 
+  useKeyboard(handleButtonClick);
+
   return (
-    <div className="inline-block p-[20px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl shadow-2xl border border-gray-700">
-      {/* Display: 43x9 units = 344px x 72px */}
-      <div style={{ width: '344px', height: '72px', marginBottom: '16px' }}>
-        <Display 
-          value={display} 
-          operator={currentOperator} 
-          hasError={hasError} 
-        />
-      </div>
+    <div 
+      className="inline-block relative rounded-3xl shadow-2xl border border-gray-700 overflow-hidden"
+      style={{ padding: '20px' }}
+    >
+      {/* Carbon fibre background - locked settings */}
+      <CarbonFibreBackground />
       
-      {/* Button Grid */}
-      <ButtonGrid onButtonClick={handleButtonClick} />
+      {/* Content layer */}
+      <div className="relative z-10">
+        <div style={{ width: '344px', height: '72px', marginBottom: '16px' }}>
+          <Display 
+            value={display} 
+            operator={currentOperator} 
+            hasError={hasError} 
+          />
+        </div>
+        <ButtonGrid onButtonClick={handleButtonClick} />
+      </div>
     </div>
   );
 }

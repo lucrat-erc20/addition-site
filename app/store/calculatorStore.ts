@@ -75,9 +75,16 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   },
   
   // Input operator (+, -, *, /)
-  inputOperator: (operator: '+' | '-' | '*' | '/') => {
-    const { display, previousValue, currentOperator } = get();
+   inputOperator: (operator: '+' | '-' | '*' | '/') => {
+    const { display, previousValue, currentOperator, waitingForOperand } = get();
     const inputValue = parseFloat(display);
+    
+    // If we just pressed an operator, allow changing it
+    if (waitingForOperand && previousValue !== null) {
+      set({ currentOperator: operator });
+      get().addToHistory(operator);
+      return;
+    }
     
     if (previousValue === null) {
       set({ previousValue: inputValue });
@@ -105,7 +112,29 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
           result = currentValue;
       }
       
-      set({ previousValue: result, display: String(result) });
+      // Check for errors
+      if (!isFinite(result)) {
+        set({ 
+          display: 'Error', 
+          hasError: true,
+          previousValue: null,
+          currentOperator: null,
+          waitingForOperand: true
+        });
+        return;
+      }
+      
+      // Format result
+      const resultStr = String(result);
+      let displayStr: string;
+      
+      if (resultStr.length > 10 || Math.abs(result) < 0.0001 || Math.abs(result) > 999999999) {
+        displayStr = result.toExponential(4);
+      } else {
+        displayStr = resultStr.slice(0, 10);
+      }
+      
+      set({ previousValue: result, display: displayStr });
     }
     
     set({ 
@@ -232,13 +261,24 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
     get().addToHistory('%');
   },
   
-  // Square (x²)
+// Square (x²)
   square: () => {
     const { display } = get();
     const { square } = require('@/lib/calculations/advanced');
     const value = parseFloat(display);
     const result = square(value);
-    set({ display: String(result), waitingForOperand: true });
+    
+    // Format result properly
+    const resultStr = String(result);
+    let displayStr: string;
+    
+    if (resultStr.length > 10 || Math.abs(result) > 999999999) {
+      displayStr = result.toExponential(4);
+    } else {
+      displayStr = resultStr.slice(0, 10);
+    }
+    
+    set({ display: displayStr, waitingForOperand: true });
     get().addToHistory('x²');
   },
   
@@ -252,7 +292,17 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
     if (isNaN(result)) {
       set({ display: 'Error', hasError: true, waitingForOperand: true });
     } else {
-      set({ display: String(result), waitingForOperand: true });
+      // Format result properly
+      const resultStr = String(result);
+      let displayStr: string;
+      
+      if (resultStr.length > 10 || Math.abs(result) < 0.0001 || Math.abs(result) > 999999999) {
+        displayStr = result.toExponential(4);
+      } else {
+        displayStr = resultStr.slice(0, 10);
+      }
+      
+      set({ display: displayStr, waitingForOperand: true });
     }
     get().addToHistory('√');
   },
@@ -267,7 +317,17 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
     if (!isFinite(result)) {
       set({ display: 'Error', hasError: true, waitingForOperand: true });
     } else {
-      set({ display: String(result), waitingForOperand: true });
+      // Format result properly - use exponential if too large/small
+      const resultStr = String(result);
+      let displayStr: string;
+      
+      if (resultStr.length > 10 || Math.abs(result) < 0.0001 || Math.abs(result) > 999999999) {
+        displayStr = result.toExponential(4);
+      } else {
+        displayStr = resultStr.slice(0, 10);
+      }
+      
+      set({ display: displayStr, waitingForOperand: true });
     }
     get().addToHistory('1/x');
   },
