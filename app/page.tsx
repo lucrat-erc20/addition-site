@@ -37,7 +37,7 @@ export default function Home() {
         <div style={{ width: '160px', height: '420px' }} />
 
         {/* Left side card */}
-        <SideCard title="Other Calculators" links={otherCalculators} height={420} />
+        <SideCard title="Other Calculators" links={otherCalculators} height={410} />
 
         {/* Calculator + ad below */}
         <div className="flex flex-col items-center">
@@ -48,7 +48,7 @@ export default function Home() {
         </div>
 
         {/* Right side card */}
-        <SideCard title="Useful Tools" links={usefulTools} height={420} />
+        <SideCard title="Useful Tools" links={usefulTools} height={410} />
 
         {/* Ghost card right outer */}
         <div style={{ width: '160px', height: '420px' }} />
