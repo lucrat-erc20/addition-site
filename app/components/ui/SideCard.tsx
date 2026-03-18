@@ -24,7 +24,7 @@ export default function SideCard({ title, links, height }: SideCardProps) {
       </h2>
       <div className="flex flex-col gap-2">
         {links.map((link) => (
-          
+          <a
             key={link.label}
             href={link.href}
             className="block bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg px-3 py-3 text-sm text-gray-300 hover:text-white"
