@@ -168,15 +168,48 @@ The calculator display has three zones:
   - ✅ 10-character limit enforced
   - 📝 **LEARNED**: Used `items-end justify-end` for bottom-right alignment
 
-### 🔄 MILESTONE 3: Calculator Logic & State (Steps 11-15) - NOT STARTED
+### 🔄 MILESTONE 3: Calculator Logic & State (Steps 11-15)
 
-- [ ] **Step 11**: Set up Zustand store
-- [ ] **Step 12**: Create calculation library
-- [ ] **Step 13**: Wire up button clicks
-- [ ] **Step 14**: Implement calculation engine
-- [ ] **Step 15**: Add keyboard listeners
+- ✅ **Step 11**: Set up Zustand store
+- ✅ **Step 12**: Create calculation library
+- ✅ **Step 13**: Wire up button clicks
+- ✅ **Step 14**: Implement calculation engine
+- ✅ **Step 15**: Add keyboard listeners
 
-### 🔄 MILESTONE 4: Audio System (Steps 16-20)
+### ✅ MILESTONE 4: Audio System (Steps 16-20) - COMPLETE
+
+- [x] **Step 16**: Set up Web Audio API
+  - ✅ AudioContext created on first user interaction (browser requirement)
+  - ✅ Audio files pre-fetched on mount, decoded on first play
+  
+- [x] **Step 17**: Add MP3 sounds
+  - ✅ key1.mp3, key2.mp3, key3.mp3 in /public/sounds/
+  - ✅ All three sounds play randomly (not mapped to key type)
+  
+- [x] **Step 18**: Create useAudio hook
+  - ✅ Handles fetch → decode → play pipeline
+  - ✅ Uses raw ArrayBuffer clone (.slice(0)) for repeated decoding
+  - ✅ Volume controlled via gain node
+  
+- [x] **Step 19**: Implement volume slider
+  - ✅ VolumeSlider component with mute toggle
+  - ✅ Speaker icon changes based on volume level
+  - ✅ Separate audioStore for volume state (persists across calculator types)
+  
+- [x] **Step 20**: Connect audio to keypresses
+  - ✅ Both mouse clicks and keyboard trigger random sounds
+  - ✅ Mute/volume respected on all input methods
+
+### ✅ BONUS: Carbon Fibre Animation
+- [x] **Carbon fibre breathing effect**
+  - ✅ carbonStore manages A1, A2, B1, B2 values with current/target lerping
+  - ✅ Each keypress calls nudge() → picks new random targets in range
+  - ✅ requestAnimationFrame loop lerps current → target at factor 0.04
+  - ✅ Threshold check (0.01) prevents unnecessary re-renders when settled
+  - 📝 Ranges: A1: 22→32, A2: 15→21, B1: 26→36, B2: 9→15
+  - 📝 If lerp feels too fast/slow, adjust factor in carbonStore (0.04 currently)
+
+
 ### 🔄 MILESTONE 5: Recording & Playback (Steps 21-25)
 ### 🔄 MILESTONE 6: Calculator Cards System (Steps 26-30)
 ### 🔄 MILESTONE 7: Skin System Foundation (Steps 31-35)
@@ -216,6 +249,20 @@ The calculator display has three zones:
   3. Update Cloudflare DNS to point to Vercel
   4. Keep Cloudflare for DNS management only
 
+  ### Audio Rules
+1. **Random sounds**: All keypresses play a random sound from key1-3.mp3
+2. **No type mapping**: Removed key-type-to-sound mapping for more natural feel
+3. **Separate audioStore**: Volume/mute state lives in its own store, not calculatorStore
+4. **Web Audio API**: Used over HTML5 Audio for lower latency
+
+### Carbon Fibre Animation
+1. **carbonStore**: Manages live A1/A2/B1/B2 values
+2. **Lerp factor 0.04**: Controls easing speed (lower = slower/smoother)
+3. **nudge()**: Called on every keypress - picks new random targets
+4. **tick()**: Called every frame via requestAnimationFrame - lerps toward targets
+5. **Threshold 0.01**: Stops updating SVG when values have settled
+
+
 ---
 
 ## 🐛 Issues & Solutions
@@ -238,6 +285,15 @@ The calculator display has three zones:
 - **Solution**: Created `ButtonConfig` type with optional `isEmpty?: boolean`
 - **Learning**: Type arrays explicitly when objects have optional properties
 
+### Issue 4: Audio not playing on first click
+- **Cause**: Browsers block AudioContext until a user gesture
+- **Solution**: AudioContext created lazily on first play() call, not on mount
+- **Learning**: Always create AudioContext inside a user event handler or call from one
+
+### Issue 5: Audio buffer reuse
+- **Cause**: decodeAudioData consumes the ArrayBuffer - can't reuse
+- **Solution**: Store raw ArrayBuffer, use .slice(0) to clone before each decode
+- **Learning**: ArrayBuffers are consumed on decode - always clone first
 ---
 
 ## 📝 Next Session Startup Checklist

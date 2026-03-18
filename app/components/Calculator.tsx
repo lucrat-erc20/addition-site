@@ -9,20 +9,9 @@ import VolumeSlider from './ui/VolumeSlider';
 import CarbonFibreBackground from './ui/CarbonFibreBackground';
 import { useCalculatorStore } from '@/store/calculatorStore';
 import { useAudioStore } from '@/store/audioStore';
+import { useCarbonStore } from '@/store/carbonStore';
 import { useKeyboard } from '@/hooks/useKeyboard';
 import { useAudio } from '@/hooks/useAudio';
-
-/**
- * Maps button values to audio sound types
- * number  → key1.mp3
- * operator → key2.mp3
- * function → key3.mp3
- */
-function getSoundType(value: string): 'number' | 'operator' | 'function' {
-  if (/^[0-9.]$/.test(value)) return 'number';
-  if (['+', '-', 'x', '÷'].includes(value)) return 'operator';
-  return 'function';
-}
 
 export default function Calculator() {
   const { 
@@ -45,12 +34,16 @@ export default function Calculator() {
 
   const { volume, isMuted } = useAudioStore();
   const { play } = useAudio(isMuted ? 0 : volume);
+  const { nudge } = useCarbonStore();
 
   const handleButtonClick = useCallback((value: string) => {
     if (!value) return;
 
-    // Play sound
-    play(getSoundType(value));
+    // Play random key sound
+    play();
+
+    // Nudge carbon fibre background
+    nudge();
     
     if (/^[0-9]$/.test(value)) {
       inputDigit(value);
@@ -112,7 +105,7 @@ export default function Calculator() {
       reciprocal();
       return;
     }
-  }, [play, inputDigit, inputDecimal, inputOperator, calculate, clear, clearAll, backspace, toggleSign, percentage, square, squareRoot, reciprocal]);
+  }, [play, nudge, inputDigit, inputDecimal, inputOperator, calculate, clear, clearAll, backspace, toggleSign, percentage, square, squareRoot, reciprocal]);
 
   useKeyboard(handleButtonClick);
 
@@ -121,7 +114,7 @@ export default function Calculator() {
       className="inline-block relative rounded-3xl shadow-2xl border border-gray-700 overflow-hidden"
       style={{ padding: '20px' }}
     >
-      {/* Carbon fibre background */}
+      {/* Carbon fibre background - animates on keypress */}
       <CarbonFibreBackground />
       
       {/* Content layer */}

@@ -2,21 +2,29 @@
 
 /**
  * Carbon fibre pattern background
- * Locked settings: tileSize:7 A:27→17 B:31→11
- * A = ↘ diagonal quads (top-left, bottom-right)
- * B = ↙ diagonal quads (top-right, bottom-left)
+ * Values are driven by carbonStore - smoothly lerps on each keypress
+ * tileSize locked at 7
+ * 
+ * Ranges:
+ *   A1: 22→32, A2: 15→21
+ *   B1: 26→36, B2: 9→15
  */
 
-interface CarbonFibreBackgroundProps {}
+'use client';
 
-export default function CarbonFibreBackground({}: CarbonFibreBackgroundProps) {
-  // Locked carbon fibre settings
-  const tileSize = 7;
+import { useEffect } from 'react';
+import { useCarbonStore } from '@/store/carbonStore';
+
+export default function CarbonFibreBackground() {
+  const { tileSize, A1, A2, B1, B2, startLoop, stopLoop } = useCarbonStore();
+
+  // Start/stop animation loop on mount/unmount
+  useEffect(() => {
+    startLoop();
+    return () => stopLoop();
+  }, [startLoop, stopLoop]);
+
   const half = tileSize / 2;
-  const colorA1 = 27; // A start
-  const colorA2 = 17; // A end
-  const colorB1 = 31; // B start
-  const colorB2 = 11; // B end
 
   return (
     <svg
@@ -27,13 +35,13 @@ export default function CarbonFibreBackground({}: CarbonFibreBackgroundProps) {
     >
       <defs>
         <linearGradient id="quadA" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={`rgb(${colorA1},${colorA1},${colorA1})`} />
-          <stop offset="100%" stopColor={`rgb(${colorA2},${colorA2},${colorA2})`} />
+          <stop offset="0%" stopColor={`rgb(${A1.current},${A1.current},${A1.current})`} />
+          <stop offset="100%" stopColor={`rgb(${A2.current},${A2.current},${A2.current})`} />
         </linearGradient>
 
         <linearGradient id="quadB" x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={`rgb(${colorB1},${colorB1},${colorB1})`} />
-          <stop offset="100%" stopColor={`rgb(${colorB2},${colorB2},${colorB2})`} />
+          <stop offset="0%" stopColor={`rgb(${B1.current},${B1.current},${B1.current})`} />
+          <stop offset="100%" stopColor={`rgb(${B2.current},${B2.current},${B2.current})`} />
         </linearGradient>
 
         <pattern id="carbonTile" x="0" y="0" width={tileSize} height={tileSize} patternUnits="userSpaceOnUse">

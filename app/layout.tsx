@@ -30,6 +30,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+        <script
+          async
+          data-cfasync="false"
+          src="https://pl28937198.effectivegatecpm.com/38d4986bf6dea79bb7233722f8c2b358/invoke.js"
+        />
       </head>
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
         {children}
