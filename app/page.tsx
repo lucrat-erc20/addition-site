@@ -33,11 +33,11 @@ export default function Home() {
       {/* Desktop: 5-column layout with ghost cards for breathing room */}
       <div className="hidden md:flex items-start justify-center gap-6">
 
-        {/* Ghost card left outer */}
-        <div style={{ width: '160px', height: '420px' }} />
-
         {/* Left side card */}
         <SideCard title="Other Calculators" links={otherCalculators} height={410} />
+
+        {/* Ghost card left inner */}
+        <div style={{ width: '160px', height: '410px', background: 'rgba(0,0,0,0.0)' }} />
 
         {/* Calculator + ad below */}
         <div className="flex flex-col items-center">
@@ -47,11 +47,13 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Ghost card right inner */}
+        <div style={{ width: '160px', height: '410px', background: 'rgba(0,0,0,0.0)' }} />
+
         {/* Right side card */}
         <SideCard title="Useful Tools" links={usefulTools} height={410} />
 
-        {/* Ghost card right outer */}
-        <div style={{ width: '160px', height: '420px' }} />
+
 
       </div>
 
