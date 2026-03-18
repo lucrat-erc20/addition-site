@@ -64,7 +64,7 @@ export default function Home() {
       <div className="flex flex-col items-center md:hidden">
         <Calculator />
         {/* Ghost below calculator */}
-        <div style={{ width: '100%', maxWidth: '384px', height: '60px', background: 'rgba(255,0,0,0.3)' }} />
+        <div style={{ width: '100%', maxWidth: '384px', height: '160px', background: 'rgba(0,0,0,0.3)' }} />
         {/* Ad always visible */}
         <div style={{ width: '100%', maxWidth: '384px' }}>
           <div id="container-38d4986bf6dea79bb7233722f8c2b358" />
