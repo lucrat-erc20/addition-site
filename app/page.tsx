@@ -22,7 +22,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-900 to-black pt-12 p-4">
 
-      {/* Mobile hamburger nav */}
       <MobileNav />
 
       {/* Title */}
@@ -31,22 +30,35 @@ export default function Home() {
         <p className="text-gray-400">Your Modern Calculator</p>
       </div>
 
-      {/* Three column layout */}
+      {/* Desktop: 5-column layout with ghost cards for breathing room */}
       <div className="hidden md:flex items-start justify-center gap-6">
-        <SideCard title="Other Calculators" links={otherCalculators} />
+
+        {/* Ghost card left outer */}
+        <div style={{ width: '160px', height: '420px' }} />
+
+        {/* Left side card */}
+        <SideCard title="Other Calculators" links={otherCalculators} height={420} />
+
+        {/* Calculator + ad below */}
         <div className="flex flex-col items-center">
           <Calculator />
-          <div className="mt-12" style={{ width: '384px' }}>
+          <div className="mt-10" style={{ width: '384px' }}>
             <div id="container-38d4986bf6dea79bb7233722f8c2b358" />
           </div>
         </div>
-        <SideCard title="Useful Tools" links={usefulTools} />
+
+        {/* Right side card */}
+        <SideCard title="Useful Tools" links={usefulTools} height={420} />
+
+        {/* Ghost card right outer */}
+        <div style={{ width: '160px', height: '420px' }} />
+
       </div>
 
-      {/* Mobile: just the calculator, nav handles links */}
+      {/* Mobile: calculator only, nav handles links */}
       <div className="flex flex-col items-center md:hidden">
         <Calculator />
-        <div className="mt-12" style={{ width: '100%', maxWidth: '384px' }}>
+        <div className="mt-10" style={{ width: '100%', maxWidth: '384px' }}>
           <div id="container-38d4986bf6dea79bb7233722f8c2b358" />
         </div>
       </div>
