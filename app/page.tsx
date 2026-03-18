@@ -26,8 +26,8 @@ export default function Home() {
 
       {/* Title */}
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-bold text-white mb-2">Addition.site</h1>
-        <p className="text-gray-400">Your Modern Calculator</p>
+        <h1 className="text-5xl font-bold text-white mb-2">ASMR Calculator</h1>
+        <p className="text-gray-400">The most satisfying way to solve anything.</p>
       </div>
 
       {/* Desktop: 5-column layout with ghost cards for breathing room */}
