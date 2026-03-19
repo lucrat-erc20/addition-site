@@ -54,6 +54,7 @@ export default function Home() {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
 
     const isMobile = window.innerWidth < 768;
+    const ns = 'http://www.w3.org/2000/svg';
 
     for (let i = 0; i < 5; i++) {
       if (!connected[i]) continue;
@@ -63,26 +64,28 @@ export default function Home() {
 
       const pr  = pEl.getBoundingClientRect();
       const crf = cEl.getBoundingClientRect();
-      const x1  = pr.left  + pr.width  / 2 - cr.left;
-      const y1  = pr.top   + pr.height / 2 - cr.top;
-      const x2  = crf.left + crf.width  / 2 - cr.left;
-      const y2  = crf.top  + crf.height / 2 - cr.top;
+
+      // Coords relative to the container div — key fix
+      const x1 = pr.left  + pr.width  / 2 - cr.left;
+      const y1 = pr.top   + pr.height / 2 - cr.top;
+      const x2 = crf.left + crf.width  / 2 - cr.left;
+      const y2 = crf.top  + crf.height / 2 - cr.top;
 
       let d: string;
       if (isMobile) {
-        // Mobile: pedal below calc, cables run up left side
-        const offset = 30 + i * 14;
-        const leftX  = Math.min(x1, x2) - offset;
+        // Pedal is below calc — route cables around the LEFT outside edge
+        // Step out further left for each cable so they don't overlap the pedal
+        const margin = 30 + i * 16;
+        const leftX  = Math.min(x1, x2) - margin;
         d = `M${x1},${y1} C${leftX},${y1} ${leftX},${y2} ${x2},${y2}`;
       } else {
-        // Desktop: pedal left of calc, cables droop down
+        // Pedal is left of calc — cables droop down between them
         const sag = 60 + i * 14;
         const cpY = Math.max(y1, y2) + sag;
         d = `M${x1},${y1} C${x1},${cpY} ${x2},${cpY} ${x2},${y2}`;
       }
 
       const col = CABLE_COLORS[i];
-      const ns  = 'http://www.w3.org/2000/svg';
 
       const glow = document.createElementNS(ns, 'path');
       glow.setAttribute('d', d); glow.setAttribute('stroke', col);
