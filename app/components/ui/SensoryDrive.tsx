@@ -154,7 +154,7 @@ function PortHole({ plugged, color, label, labelColor, onClick }: {
   const handle = () => { setPulse(true); setTimeout(() => setPulse(false), 500); onClick(); };
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div className="flex flex-col items-center gap-0">
       <div onClick={handle} style={{
         width: 22, height: 22, borderRadius: '50%', cursor: 'pointer',
         background: plugged ? 'radial-gradient(circle at 38% 38%, #2a2a2a, #111)' : 'radial-gradient(circle at 38% 38%, #1a1a1a, #050505)',
@@ -178,6 +178,14 @@ function PortHole({ plugged, color, label, labelColor, onClick }: {
           }} />
         )}
       </div>
+      {/* Short cable stub dropping down */}
+      <div style={{
+        width: 6, height: plugged ? 28 : 0,
+        background: `linear-gradient(to bottom, ${color}, transparent)`,
+        borderRadius: '0 0 3px 3px',
+        opacity: 0.7,
+        transition: 'height 0.2s',
+      }} />
       <span style={{ fontSize: '0.38rem', letterSpacing: '0.08em', color: labelColor, textTransform: 'uppercase' }}>
         {label}
       </span>

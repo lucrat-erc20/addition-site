@@ -25,9 +25,9 @@ export default function Calculator({ calcPortRefs }: CalculatorProps) {
     toggleSign, percentage, square, squareRoot, reciprocal,
   } = useCalculatorStore();
 
-  const { connected } = useSensoryStore();
-  const { play }      = useSensoryAudio();
-  const { nudge }     = useCarbonStore();
+  const { connected, toggleCable } = useSensoryStore();
+  const { play, playConnectionPop } = useSensoryAudio();
+  const { nudge } = useCarbonStore();
 
   const handleButtonClick = useCallback((value: string) => {
     if (!value) return;
@@ -55,6 +55,11 @@ export default function Calculator({ calcPortRefs }: CalculatorProps) {
 
   useKeyboard(handleButtonClick);
 
+  const handlePortClick = useCallback((i: number) => {
+    toggleCable(i);
+    playConnectionPop(!connected[i]);
+  }, [toggleCable, playConnectionPop, connected]);
+
   return (
     <div
       className="inline-block relative rounded-3xl shadow-2xl border border-gray-700 overflow-visible"
@@ -73,7 +78,11 @@ export default function Calculator({ calcPortRefs }: CalculatorProps) {
         <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'flex-end' }}>
           {CABLES.map((cab, i) => (
             <div key={i} ref={calcPortRefs[i]}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <div
+                onClick={() => handlePortClick(i)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
+              >
+                {/* Port hole */}
                 <div style={{
                   width: 22, height: 22, borderRadius: '50%', position: 'relative',
                   background: connected[i]
@@ -85,7 +94,8 @@ export default function Calculator({ calcPortRefs }: CalculatorProps) {
                   transition: 'border-color 0.15s',
                 }}>
                   <div style={{
-                    width: connected[i] ? 7 : 9, height: connected[i] ? 7 : 9, borderRadius: '50%',
+                    width: connected[i] ? 7 : 9, height: connected[i] ? 7 : 9,
+                    borderRadius: '50%',
                     background: connected[i] ? cab.color : '#050505',
                     border: connected[i] ? 'none' : '1px solid #1a1a1a',
                     boxShadow: connected[i] ? `0 0 4px ${cab.color}` : 'none',
@@ -99,7 +109,19 @@ export default function Calculator({ calcPortRefs }: CalculatorProps) {
                     }} />
                   )}
                 </div>
-                <span style={{ fontSize: '0.38rem', letterSpacing: '0.08em', color: cab.labelColor, textTransform: 'uppercase' }}>
+                {/* Short cable stub dropping down */}
+                <div style={{
+                  width: 6, height: connected[i] ? 28 : 0,
+                  background: `linear-gradient(to bottom, ${cab.color}, transparent)`,
+                  borderRadius: '0 0 3px 3px',
+                  opacity: 0.7,
+                  transition: 'height 0.2s',
+                }} />
+                <span style={{
+                  fontSize: '0.38rem', letterSpacing: '0.08em',
+                  color: cab.labelColor, textTransform: 'uppercase',
+                  marginTop: 2,
+                }}>
                   {cab.label}
                 </span>
               </div>
