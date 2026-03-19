@@ -229,14 +229,13 @@ function LEDStrip({ systemOn }: { systemOn: boolean }) {
 // ── Main component ─────────────────────────────────────────────────────────
 interface SensoryDriveProps {
   pedalPortRefs: React.RefObject<HTMLDivElement | null>[];
-  onCableChange: () => void;
 }
 
-export default function SensoryDrive({ pedalPortRefs, onCableChange }: SensoryDriveProps) {
-  const {
-    systemOn, volume, pitch, tone, reverb, drive, connected,
-    togglePower, setKnob, toggleCable,
-  } = useSensoryStore();
+  export default function SensoryDrive({ pedalPortRefs }: SensoryDriveProps) {
+    const {
+      systemOn, volume, pitch, tone, reverb, drive, connected,
+      togglePower, setKnob, toggleCable,
+    } = useSensoryStore();
 
   const { playConnectionPop } = useSensoryAudio();
   const [packIdx, setPackIdx]       = useState(0);
@@ -245,7 +244,6 @@ export default function SensoryDrive({ pedalPortRefs, onCableChange }: SensoryDr
   const handleCableToggle = (i: number) => {
     toggleCable(i);
     playConnectionPop(!connected[i]);
-    setTimeout(onCableChange, 30);
   };
 
   const knobDefs = [
