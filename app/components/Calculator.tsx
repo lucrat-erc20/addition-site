@@ -2,138 +2,114 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import Display from './ui/Display';
 import ButtonGrid from './ui/ButtonGrid';
-import VolumeSlider from './ui/VolumeSlider';
 import CarbonFibreBackground from './ui/CarbonFibreBackground';
 import { useCalculatorStore } from '@/store/calculatorStore';
-import { useAudioStore } from '@/store/audioStore';
+import { useSensoryStore } from '@/store/sensoryStore';
+import { useSensoryAudio } from '@/hooks/useSensoryAudio';
 import { useCarbonStore } from '@/store/carbonStore';
 import { useKeyboard } from '@/hooks/useKeyboard';
-import { useAudio } from '@/hooks/useAudio';
+import { CABLES } from './ui/SensoryDrive';
 
-export default function Calculator() {
-  const { 
-    display, 
-    currentOperator, 
-    hasError,
-    inputDigit,
-    inputDecimal,
-    inputOperator,
-    calculate,
-    clear,
-    clearAll,
-    backspace,
-    toggleSign,
-    percentage,
-    square,
-    squareRoot,
-    reciprocal
+interface CalculatorProps {
+  // Refs passed up to page so SensoryDrive can draw cables to them
+  calcPortRefs: React.RefObject<HTMLDivElement | null>[];
+}
+
+export default function Calculator({ calcPortRefs }: CalculatorProps) {
+  const {
+    display, currentOperator, hasError,
+    inputDigit, inputDecimal, inputOperator,
+    calculate, clear, clearAll, backspace,
+    toggleSign, percentage, square, squareRoot, reciprocal,
   } = useCalculatorStore();
 
-  const { volume, isMuted } = useAudioStore();
-  const { play } = useAudio(isMuted ? 0 : volume);
+  const { connected } = useSensoryStore();
+  const { play } = useSensoryAudio();
   const { nudge } = useCarbonStore();
 
   const handleButtonClick = useCallback((value: string) => {
     if (!value) return;
-
-    // Play random key sound
     play();
-
-    // Nudge carbon fibre background
     nudge();
-    
-    if (/^[0-9]$/.test(value)) {
-      inputDigit(value);
-      return;
-    }
-    if (value === '.') {
-      inputDecimal();
-      return;
-    }
-    if (value === '+') {
-      inputOperator('+');
-      return;
-    }
-    if (value === '-') {
-      inputOperator('-');
-      return;
-    }
-    if (value === 'x') {
-      inputOperator('*');
-      return;
-    }
-    if (value === '÷') {
-      inputOperator('/');
-      return;
-    }
-    if (value === '=') {
-      calculate();
-      return;
-    }
-    if (value === 'C') {
-      clear();
-      return;
-    }
-    if (value === 'AC') {
-      clearAll();
-      return;
-    }
-    if (value === '⌫') {
-      backspace();
-      return;
-    }
-    if (value === '±') {
-      toggleSign();
-      return;
-    }
-    if (value === '%') {
-      percentage();
-      return;
-    }
-    if (value === 'x²') {
-      square();
-      return;
-    }
-    if (value === '√') {
-      squareRoot();
-      return;
-    }
-    if (value === '1/x') {
-      reciprocal();
-      return;
-    }
+
+    // Trigger LED on pedal
+    const triggerLED = (window as unknown as Record<string, () => void>).__sensoryTriggerLED;
+    triggerLED?.();
+    //if (typeof triggerLED === 'function') (triggerLED as () => void)();
+
+    if (/^[0-9]$/.test(value))           { inputDigit(value); return; }
+    if (value === '.')                     { inputDecimal(); return; }
+    if (value === '+')                     { inputOperator('+'); return; }
+    if (value === '-')                     { inputOperator('-'); return; }
+    if (value === 'x')                     { inputOperator('*'); return; }
+    if (value === '÷')                     { inputOperator('/'); return; }
+    if (value === '=')                     { calculate(); return; }
+    if (value === 'C')                     { clear(); return; }
+    if (value === 'AC')                    { clearAll(); return; }
+    if (value === '⌫')                    { backspace(); return; }
+    if (value === '±')                     { toggleSign(); return; }
+    if (value === '%')                     { percentage(); return; }
+    if (value === 'x²')                   { square(); return; }
+    if (value === '√')                    { squareRoot(); return; }
+    if (value === '1/x')                  { reciprocal(); return; }
   }, [play, nudge, inputDigit, inputDecimal, inputOperator, calculate, clear, clearAll, backspace, toggleSign, percentage, square, squareRoot, reciprocal]);
 
   useKeyboard(handleButtonClick);
 
   return (
-    <div 
-      className="inline-block relative rounded-3xl shadow-2xl border border-gray-700 overflow-hidden"
+    <div
+      className="inline-block relative rounded-3xl shadow-2xl border border-gray-700 overflow-visible"
       style={{ padding: '20px' }}
     >
-      {/* Carbon fibre background - animates on keypress */}
       <CarbonFibreBackground />
-      
-      {/* Content layer */}
+
       <div className="relative z-10">
-        {/* Display */}
         <div style={{ width: '344px', height: '72px', marginBottom: '16px' }}>
-          <Display 
-            value={display} 
-            operator={currentOperator} 
-            hasError={hasError} 
-          />
+          <Display value={display} operator={currentOperator} hasError={hasError} />
         </div>
 
-        {/* Button Grid */}
         <ButtonGrid onButtonClick={handleButtonClick} />
 
-        {/* Volume slider - below buttons */}
-        <div className="mt-3 flex justify-end">
-          <VolumeSlider />
+        {/* Cable jack ports — bottom left of calculator */}
+        <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+          {CABLES.map((cab, i) => (
+            <div key={i} ref={calcPortRefs[i]}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                {/* Port hole */}
+                <div style={{
+                  width: 22, height: 22, borderRadius: '50%', position: 'relative',
+                  background: connected[i]
+                    ? 'radial-gradient(circle at 38% 38%, #2a2a2a, #111)'
+                    : 'radial-gradient(circle at 38% 38%, #1a1a1a, #050505)',
+                  border: `2px solid ${connected[i] ? cab.color : '#2a2a2a'}`,
+                  boxShadow: connected[i] ? '0 0 8px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)' : 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'border-color 0.15s',
+                }}>
+                  <div style={{
+                    width: connected[i] ? 7 : 9, height: connected[i] ? 7 : 9, borderRadius: '50%',
+                    background: connected[i] ? cab.color : '#050505',
+                    border: connected[i] ? 'none' : '1px solid #1a1a1a',
+                    boxShadow: connected[i] ? `0 0 4px ${cab.color}` : 'none',
+                    transition: 'all 0.2s',
+                  }} />
+                  {connected[i] && (
+                    <div style={{
+                      position: 'absolute', width: 6, height: 6, borderRadius: '50%',
+                      background: 'conic-gradient(#444 0deg, #222 90deg, #555 180deg, #333 270deg)',
+                      border: '1px solid #444',
+                    }} />
+                  )}
+                </div>
+                <span style={{ fontSize: '0.38rem', letterSpacing: '0.08em', color: cab.labelColor, textTransform: 'uppercase' }}>
+                  {cab.label}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
