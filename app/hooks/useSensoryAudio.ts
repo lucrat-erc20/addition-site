@@ -115,7 +115,7 @@ export function useSensoryAudio() {
     shaper.oversample = '4x';
 
     // ── Reverb via delay feedback loop (cable 3 = Trig) ──
-    const effectiveReverb = connected[3] ? reverb / 100 : 0;
+    const effectiveReverb = connected[3] && reverb > 15 ? reverb / 100 : 0;
     const delay = ctx.createDelay(0.5);
     delay.delayTime.value = 0.1;
     const fbGain = ctx.createGain();
@@ -128,11 +128,14 @@ export function useSensoryAudio() {
     shaper.connect(ctx.destination);
 
     // Reverb parallel send
-    if (effectiveReverb > 0.05) {
-      shaper.connect(delay);
-      delay.connect(fbGain);
-      fbGain.connect(delay);      // feedback loop
-      fbGain.connect(ctx.destination);
+    if (effectiveReverb > 0.15) {
+    const wetGain = ctx.createGain();
+    wetGain.gain.value = effectiveReverb * 0.25;
+    shaper.connect(delay);
+    delay.connect(fbGain);
+    fbGain.connect(delay);
+    fbGain.connect(wetGain);
+    wetGain.connect(ctx.destination);
     }
 
     source.start();
