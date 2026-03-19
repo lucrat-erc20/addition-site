@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import Display from './ui/Display';
 import ButtonGrid from './ui/ButtonGrid';
 import CarbonFibreBackground from './ui/CarbonFibreBackground';
@@ -14,7 +14,6 @@ import { useKeyboard } from '@/hooks/useKeyboard';
 import { CABLES } from './ui/SensoryDrive';
 
 interface CalculatorProps {
-  // Refs passed up to page so SensoryDrive can draw cables to them
   calcPortRefs: React.RefObject<HTMLDivElement | null>[];
 }
 
@@ -27,34 +26,31 @@ export default function Calculator({ calcPortRefs }: CalculatorProps) {
   } = useCalculatorStore();
 
   const { connected } = useSensoryStore();
-  const { play } = useSensoryAudio();
-  const { nudge } = useCarbonStore();
+  const { play }      = useSensoryAudio();
+  const { nudge }     = useCarbonStore();
 
   const handleButtonClick = useCallback((value: string) => {
     if (!value) return;
     play();
     nudge();
+    const fn = (window as unknown as Record<string, () => void>).__sensoryTriggerLED;
+    fn?.();
 
-    // Trigger LED on pedal
-    const triggerLED = (window as unknown as Record<string, () => void>).__sensoryTriggerLED;
-    triggerLED?.();
-    //if (typeof triggerLED === 'function') (triggerLED as () => void)();
-
-    if (/^[0-9]$/.test(value))           { inputDigit(value); return; }
-    if (value === '.')                     { inputDecimal(); return; }
-    if (value === '+')                     { inputOperator('+'); return; }
-    if (value === '-')                     { inputOperator('-'); return; }
-    if (value === 'x')                     { inputOperator('*'); return; }
-    if (value === '÷')                     { inputOperator('/'); return; }
-    if (value === '=')                     { calculate(); return; }
-    if (value === 'C')                     { clear(); return; }
-    if (value === 'AC')                    { clearAll(); return; }
-    if (value === '⌫')                    { backspace(); return; }
-    if (value === '±')                     { toggleSign(); return; }
-    if (value === '%')                     { percentage(); return; }
-    if (value === 'x²')                   { square(); return; }
-    if (value === '√')                    { squareRoot(); return; }
-    if (value === '1/x')                  { reciprocal(); return; }
+    if (/^[0-9]$/.test(value))  { inputDigit(value); return; }
+    if (value === '.')           { inputDecimal(); return; }
+    if (value === '+')           { inputOperator('+'); return; }
+    if (value === '-')           { inputOperator('-'); return; }
+    if (value === 'x')           { inputOperator('*'); return; }
+    if (value === '÷')           { inputOperator('/'); return; }
+    if (value === '=')           { calculate(); return; }
+    if (value === 'C')           { clear(); return; }
+    if (value === 'AC')          { clearAll(); return; }
+    if (value === '⌫')          { backspace(); return; }
+    if (value === '±')           { toggleSign(); return; }
+    if (value === '%')           { percentage(); return; }
+    if (value === 'x²')         { square(); return; }
+    if (value === '√')          { squareRoot(); return; }
+    if (value === '1/x')         { reciprocal(); return; }
   }, [play, nudge, inputDigit, inputDecimal, inputOperator, calculate, clear, clearAll, backspace, toggleSign, percentage, square, squareRoot, reciprocal]);
 
   useKeyboard(handleButtonClick);
@@ -73,19 +69,18 @@ export default function Calculator({ calcPortRefs }: CalculatorProps) {
 
         <ButtonGrid onButtonClick={handleButtonClick} />
 
-        {/* Cable jack ports — bottom left of calculator */}
+        {/* Cable port holes — bottom of calculator */}
         <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'flex-end' }}>
           {CABLES.map((cab, i) => (
             <div key={i} ref={calcPortRefs[i]}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                {/* Port hole */}
                 <div style={{
                   width: 22, height: 22, borderRadius: '50%', position: 'relative',
                   background: connected[i]
                     ? 'radial-gradient(circle at 38% 38%, #2a2a2a, #111)'
                     : 'radial-gradient(circle at 38% 38%, #1a1a1a, #050505)',
                   border: `2px solid ${connected[i] ? cab.color : '#2a2a2a'}`,
-                  boxShadow: connected[i] ? '0 0 8px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)' : 'none',
+                  boxShadow: connected[i] ? '0 0 8px rgba(0,0,0,0.8)' : 'none',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'border-color 0.15s',
                 }}>
