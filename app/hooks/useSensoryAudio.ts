@@ -1,17 +1,11 @@
 // app/hooks/useSensoryAudio.ts
 
 /**
- * Audio hook for Sensory Drive pedal
- * Plays real MP3 key sounds (key1/2/3.mp3) through a live
- * Web Audio processing chain driven by the pedal knobs:
+ * Audio hook for the Sensory Drive pedal.
+ * Plays clean MP3 key sounds from the active sound pack.
+ * Reloads buffers automatically when the sound pack changes.
  *
- *   BufferSource → GainNode (volume)
- *               → BiquadFilter (tone)
- *               → WaveShaperNode (drive/distortion)
- *               → DelayNode + feedback (reverb)
- *               → Destination
- *
- * Pitch is applied via source.playbackRate
+ * Sound packs live at: /public/sounds/{pack-slug}/key1.mp3 etc.
  */
 
 import { useEffect, useRef, useCallback } from 'react';
@@ -19,138 +13,111 @@ import { useSensoryStore } from '@/store/sensoryStore';
 
 const SOUNDS = ['key1.mp3', 'key2.mp3', 'key3.mp3'];
 
-// Build a soft-clip distortion curve for the WaveShaper
-function makeDistortionCurve(amount: number): Float32Array<ArrayBuffer> {
-  const n = 256;
-  const curve = new Float32Array(new ArrayBuffer(n * 4));
-  for (let i = 0; i < n; i++) {
-    const x = (i * 2) / n - 1;
-    curve[i] = ((Math.PI + amount) * x) / (Math.PI + amount * Math.abs(x));
-  }
-  return curve;
-}
-
 export function useSensoryAudio() {
-  const audioCtxRef    = useRef<AudioContext | null>(null);
-  const rawBuffersRef  = useRef<Map<string, ArrayBuffer>>(new Map());
-  const buffersRef     = useRef<Map<string, AudioBuffer>>(new Map());
+  const audioCtxRef   = useRef<AudioContext | null>(null);
+  const rawBuffersRef = useRef<Map<string, ArrayBuffer>>(new Map());
+  const buffersRef    = useRef<Map<string, AudioBuffer>>(new Map());
+  const loadedPackRef = useRef<string>('');
 
-  // Live refs so play() always reads fresh store values
+  // Live ref so play() always reads fresh store values without re-subscribing
   const storeRef = useRef(useSensoryStore.getState());
-  useEffect(() => {
-    return useSensoryStore.subscribe(s => { storeRef.current = s; });
-  }, []);
-
-  // Pre-fetch MP3s on mount
-  useEffect(() => {
-    (async () => {
-      for (const sound of SOUNDS) {
-        try {
-          const res = await fetch(`/sounds/${sound}`);
-          rawBuffersRef.current.set(sound, await res.arrayBuffer());
-        } catch (e) {
-          console.warn(`Failed to fetch ${sound}:`, e);
-        }
-      }
-    })();
-  }, []);
+  useEffect(() =>
+    useSensoryStore.subscribe(s => { storeRef.current = s; })
+  , []);
 
   const ensureContext = useCallback(async () => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      audioCtxRef.current = new (
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      )();
     }
-    const ctx = audioCtxRef.current;
-    if (ctx.state === 'suspended') await ctx.resume();
+    if (audioCtxRef.current.state === 'suspended') {
+      await audioCtxRef.current.resume();
+    }
+  }, []);
 
+  // Load all three sounds for a given pack slug
+  const loadPack = useCallback(async (pack: string) => {
+    if (loadedPackRef.current === pack) return;
+    loadedPackRef.current = pack;
+
+    // Clear old buffers so stale sounds don't play
+    rawBuffersRef.current.clear();
+    buffersRef.current.clear();
+
+    for (const sound of SOUNDS) {
+      try {
+        const res = await fetch(`/sounds/${pack}/${sound}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        rawBuffersRef.current.set(sound, await res.arrayBuffer());
+      } catch (e) {
+        console.warn(`Sensory Drive: failed to fetch ${pack}/${sound}:`, e);
+      }
+    }
+  }, []);
+
+  // Decode any raw buffers not yet decoded
+  const decodeBuffers = useCallback(async () => {
+    const ctx = audioCtxRef.current;
+    if (!ctx) return;
     for (const [key, raw] of rawBuffersRef.current.entries()) {
       if (!buffersRef.current.has(key)) {
         try {
           buffersRef.current.set(key, await ctx.decodeAudioData(raw.slice(0)));
         } catch (e) {
-          console.warn(`Failed to decode ${key}:`, e);
+          console.warn(`Sensory Drive: failed to decode ${key}:`, e);
         }
       }
     }
   }, []);
 
+  // Pre-load the default pack on mount
+  useEffect(() => {
+    loadPack(storeRef.current.soundPack);
+  }, [loadPack]);
+
+  // Play a random sound from the current pack — clean, no processing chain
   const play = useCallback(async () => {
-    const { systemOn, volume, pitch, tone, reverb, drive, connected } = storeRef.current;
+    const { systemOn, volume, connected, soundPack } = storeRef.current;
     if (!systemOn) return;
 
-    // Volume knob (cable 0 = Signal) controls whether sound plays at all
+    // Signal cable (index 0) gates volume
     const effectiveVolume = connected[0] ? volume / 100 : 0;
     if (effectiveVolume === 0) return;
 
     await ensureContext();
-    const ctx = audioCtxRef.current!;
 
+    // Switch pack if it changed
+    if (loadedPackRef.current !== soundPack) {
+      await loadPack(soundPack);
+    }
+
+    await decodeBuffers();
+
+    const ctx = audioCtxRef.current!;
     const randomSound = SOUNDS[Math.floor(Math.random() * SOUNDS.length)];
     const buffer = buffersRef.current.get(randomSound);
     if (!buffer) return;
 
-    // ── Source ──
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-
-    // Pitch (cable 4 = Mod). 0.5x to 2x playback rate mapped from 0–100
-    const effectivePitch = connected[4] ? pitch : 50;
-    source.playbackRate.value = 0.5 + (effectivePitch / 100) * 1.5;
-
-    // ── Gain (volume) ──
+    const source   = ctx.createBufferSource();
     const gainNode = ctx.createGain();
+    source.buffer       = buffer;
     gainNode.gain.value = effectiveVolume;
-
-    // ── Tone filter (cable 2 = Return). Lowpass 400Hz–8000Hz ──
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    const effectiveTone = connected[2] ? tone : 60;
-    filter.frequency.value = 400 + (effectiveTone / 100) * 7600;
-    filter.Q.value = 1.2;
-
-    // ── Drive / waveshaper (cable 1 = Drive) ──
-    const shaper = ctx.createWaveShaper();
-    const effectiveDrive = connected[1] ? drive : 0;
-    shaper.curve = makeDistortionCurve(effectiveDrive * 4) as Float32Array<ArrayBuffer>;
-    shaper.oversample = '4x';
-
-    // ── Reverb via delay feedback loop (cable 3 = Trig) ──
-    const effectiveReverb = connected[3] && reverb > 15 ? reverb / 100 : 0;
-    const delay = ctx.createDelay(0.5);
-    delay.delayTime.value = 0.1;
-    const fbGain = ctx.createGain();
-    fbGain.gain.value = effectiveReverb * 0.5;
-
-    // ── Chain: source → gain → filter → shaper → destination ──
     source.connect(gainNode);
-    gainNode.connect(filter);
-    filter.connect(shaper);
-    shaper.connect(ctx.destination);
-
-    // Reverb parallel send
-    if (effectiveReverb > 0.15) {
-    const wetGain = ctx.createGain();
-    wetGain.gain.value = effectiveReverb * 0.25;
-    shaper.connect(delay);
-    delay.connect(fbGain);
-    fbGain.connect(delay);
-    fbGain.connect(wetGain);
-    wetGain.connect(ctx.destination);
-    }
-
+    gainNode.connect(ctx.destination);
     source.start();
-  }, [ensureContext]);
+  }, [ensureContext, loadPack, decodeBuffers]);
 
-  // Connection pop + hum sound (called from pedal on cable click)
+  // Connection pop + hum on cable plug/unplug
   const playConnectionPop = useCallback((isConnect: boolean) => {
-    if (!storeRef.current.systemOn) return;
+    const ctx = audioCtxRef.current;
+    if (!ctx || !storeRef.current.systemOn) return;
     try {
-      const ctx = audioCtxRef.current;
-      if (!ctx) return;
       const t = ctx.currentTime;
 
       const osc = ctx.createOscillator();
-      const g = ctx.createGain();
+      const g   = ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(isConnect ? 90 : 55, t);

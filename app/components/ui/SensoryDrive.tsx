@@ -14,7 +14,13 @@ export const CABLES = [
   { color: '#ff8844', label: 'Mod',    knob: 'pitch'   as const, labelColor: '#cc6633' },
 ];
 
-const PACKS = ['Mechanical 1', 'Mechanical 2', 'Typewriter', 'Soft Tactile', 'Clicky Blue'];
+const PACKS = [
+  { label: 'Mechanical 1', slug: 'mechanical-1' },
+  { label: 'Mechanical 2', slug: 'mechanical-2' },
+  { label: 'Typewriter',   slug: 'typewriter'   },
+  { label: 'Soft Tactile', slug: 'soft-tactile' },
+  { label: 'Clicky Blue',  slug: 'clicky-blue'  },
+];
 
 // ── Knob canvas renderer ───────────────────────────────────────────────────
 function drawKnobCanvas(
@@ -232,13 +238,13 @@ interface SensoryDriveProps {
 }
 
   export default function SensoryDrive({ pedalPortRefs }: SensoryDriveProps) {
-    const {
-      systemOn, volume, pitch, tone, reverb, drive, connected,
-      togglePower, setKnob, toggleCable,
-    } = useSensoryStore();
+  const {
+    systemOn, volume, pitch, tone, reverb, drive, connected,
+    togglePower, setKnob, toggleCable, soundPack, setSoundPack,
+  } = useSensoryStore();
 
   const { playConnectionPop } = useSensoryAudio();
-  const [packIdx, setPackIdx]       = useState(0);
+  const packIdx = PACKS.findIndex(p => p.slug === soundPack);
   const [dropdownOpen, setDropdown] = useState(false);
 
   const handleCableToggle = (i: number) => {
@@ -294,19 +300,21 @@ interface SensoryDriveProps {
         }}>
           <div>
             <div style={{ fontSize: '0.55rem', color: '#3a3a3a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Sound Pack</div>
-            <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: '0.7rem', color: '#c8a84b' }}>{PACKS[packIdx]}</div>
+            <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: '0.7rem', color: '#c8a84b' }}>{PACKS[packIdx].label}</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <span onClick={e => { e.stopPropagation(); setPackIdx(p => (p - 1 + PACKS.length) % PACKS.length); }}
+            <span
+              onClick={e => { e.stopPropagation(); setSoundPack(PACKS[(packIdx - 1 + PACKS.length) % PACKS.length].slug); }}
               style={{ fontSize: '0.45rem', color: '#555', cursor: 'pointer', padding: '1px 3px' }}>▲</span>
-            <span onClick={e => { e.stopPropagation(); setPackIdx(p => (p + 1) % PACKS.length); }}
+            <span
+              onClick={e => { e.stopPropagation(); setSoundPack(PACKS[(packIdx + 1) % PACKS.length].slug); }}
               style={{ fontSize: '0.45rem', color: '#555', cursor: 'pointer', padding: '1px 3px' }}>▼</span>
           </div>
         </div>
         {dropdownOpen && (
           <div style={{ background: '#0a0a0a', border: '1px solid #222', borderRadius: 5, overflow: 'hidden' }}>
             {PACKS.map((p, i) => (
-              <div key={p} onClick={() => { setPackIdx(i); setDropdown(false); }} style={{
+              <div key={p.slug} onClick={() => { setSoundPack(p.slug); setDropdown(false); }} style={{
                 padding: '7px 12px', fontFamily: "'Share Tech Mono', monospace", fontSize: '0.68rem',
                 color: i === packIdx ? '#c8a84b' : '#444',
                 background: i === packIdx ? '#0f0f0c' : 'transparent',
@@ -314,7 +322,7 @@ interface SensoryDriveProps {
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: i === packIdx ? '#c8a84b' : '#222' }} />
-                {p}
+                {p.label}
               </div>
             ))}
           </div>
