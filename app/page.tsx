@@ -125,14 +125,14 @@ export default function Home() {
       </div>
 
       {/* Container — SVG cable layer is relative to this div */}
-      <div ref={containerRef} style={{ position: 'relative' }}>
-
+      <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
         <svg
           ref={svgRef}
           style={{
             position: 'absolute', top: 0, left: 0,
             width: '100%', height: '100%',
-            pointerEvents: 'none', zIndex: 20, overflow: 'visible',
+            pointerEvents: 'none', zIndex: 20,
+            overflow: 'visible',
           }}
         />
 
