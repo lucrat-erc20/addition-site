@@ -86,29 +86,45 @@ function Knob({ id, label, value, active, size = 58, onChange }: KnobProps) {
     if (canvasRef.current) drawKnobCanvas(canvasRef.current, value, active);
   }, [value, active]);
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!active) return;
-    dragRef.current = { startY: e.clientY, startVal: value };
-    e.preventDefault();
-  }, [active, value]);
-
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
       if (!dragRef.current) return;
-      const delta = (dragRef.current.startY - e.clientY) * 0.85;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const delta = (dragRef.current.startY - clientY) * 0.85;
       onChange(Math.max(0, Math.min(100, dragRef.current.startVal + delta)));
     };
     const onUp = () => { dragRef.current = null; };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
   }, [onChange]);
 
   return (
     <div className="flex flex-col items-center gap-1" style={{ opacity: active ? 1 : 0.2, transition: 'opacity 0.3s' }}>
       <span style={{ fontSize: '0.46rem', letterSpacing: '0.12em', color: '#555', textTransform: 'uppercase' }}>{label}</span>
-      <canvas ref={canvasRef} id={id} width={size} height={size} onMouseDown={onMouseDown}
-        style={{ cursor: active ? 'grab' : 'default', borderRadius: '50%', display: 'block' }} />
+      <canvas
+        ref={canvasRef}
+        id={id}
+        width={size}
+        height={size}
+        onMouseDown={e => {
+          if (!active) return;
+          dragRef.current = { startY: e.clientY, startVal: value };
+          e.preventDefault();
+        }}
+        onTouchStart={e => {
+          if (!active) return;
+          dragRef.current = { startY: e.touches[0].clientY, startVal: value };
+        }}
+        style={{ cursor: active ? 'grab' : 'default', borderRadius: '50%', display: 'block' }}
+      />
       <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: '0.56rem', color: '#666' }}>
         {Math.round(value)}
       </span>

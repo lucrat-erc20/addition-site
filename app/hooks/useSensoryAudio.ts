@@ -4,6 +4,7 @@
  * Audio hook for the Sensory Drive pedal.
  * Plays clean MP3 key sounds from the active sound pack.
  * Reloads buffers automatically when the sound pack changes.
+ * Each knob plays a distinct tone when turned.
  *
  * Sound packs live at: /public/sounds/{pack-slug}/key1.mp3 etc.
  */
@@ -13,18 +14,22 @@ import { useSensoryStore } from '@/store/sensoryStore';
 
 const SOUNDS = ['key1.mp3', 'key2.mp3', 'key3.mp3'];
 
+// One distinct frequency per knob slot (Volume, Drive, Tone, Reverb, Pitch, Power)
+const KNOB_FREQS = [220, 277, 330, 392, 494, 523];
+
 export function useSensoryAudio() {
   const audioCtxRef   = useRef<AudioContext | null>(null);
   const rawBuffersRef = useRef<Map<string, ArrayBuffer>>(new Map());
   const buffersRef    = useRef<Map<string, AudioBuffer>>(new Map());
   const loadedPackRef = useRef<string>('');
 
-  // Live ref so play() always reads fresh store values without re-subscribing
+  // Live ref so callbacks always read fresh store values
   const storeRef = useRef(useSensoryStore.getState());
   useEffect(() =>
     useSensoryStore.subscribe(s => { storeRef.current = s; })
   , []);
 
+  // Create or resume AudioContext
   const ensureContext = useCallback(async () => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (
@@ -37,12 +42,15 @@ export function useSensoryAudio() {
     }
   }, []);
 
+  // Synchronous context getter for non-async functions
+  const getContext = useCallback((): AudioContext | null => {
+    return audioCtxRef.current;
+  }, []);
+
   // Load all three sounds for a given pack slug
   const loadPack = useCallback(async (pack: string) => {
     if (loadedPackRef.current === pack) return;
     loadedPackRef.current = pack;
-
-    // Clear old buffers so stale sounds don't play
     rawBuffersRef.current.clear();
     buffersRef.current.clear();
 
@@ -77,7 +85,7 @@ export function useSensoryAudio() {
     loadPack(storeRef.current.soundPack);
   }, [loadPack]);
 
-  // Play a random sound from the current pack — clean, no processing chain
+  // Play a random MP3 from the current pack — clean, no processing chain
   const play = useCallback(async () => {
     const { systemOn, volume, connected, soundPack } = storeRef.current;
     if (!systemOn) return;
@@ -88,7 +96,6 @@ export function useSensoryAudio() {
 
     await ensureContext();
 
-    // Switch pack if it changed
     if (loadedPackRef.current !== soundPack) {
       await loadPack(soundPack);
     }
@@ -109,10 +116,37 @@ export function useSensoryAudio() {
     source.start();
   }, [ensureContext, loadPack, decodeBuffers]);
 
+  // Play a short sine tone when a knob is turned
+  // knobIndex 0-5 maps to KNOB_FREQS for a distinct pitch per knob
+  const playKnobTone = useCallback((knobIndex: number) => {
+    if (!storeRef.current.systemOn) return;
+    const ctx = getContext();
+    if (!ctx) return;
+    try {
+      const t    = ctx.currentTime;
+      const freq = KNOB_FREQS[knobIndex] ?? 330;
+
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.type          = 'sine';
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+      osc.start(t);
+      osc.stop(t + 0.25);
+    } catch (e) {}
+  }, [getContext]);
+
   // Connection pop + hum on cable plug/unplug
   const playConnectionPop = useCallback((isConnect: boolean) => {
-    const ctx = audioCtxRef.current;
-    if (!ctx || !storeRef.current.systemOn) return;
+    if (!storeRef.current.systemOn) return;
+    const ctx = getContext();
+    if (!ctx) return;
     try {
       const t = ctx.currentTime;
 
@@ -139,7 +173,7 @@ export function useSensoryAudio() {
         hum.start(t); hum.stop(t + 1.1);
       }
     } catch (e) {}
-  }, []);
+  }, [getContext]);
 
-  return { play, playConnectionPop };
+  return { play, playConnectionPop, playKnobTone };
 }

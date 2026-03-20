@@ -15,10 +15,10 @@ interface SideCardProps {
 
 export default function SideCard({ title, links, height }: SideCardProps) {
   return (
-    <div
-      className="rounded-2xl border border-gray-700 bg-gray-900/60 backdrop-blur-sm p-5 flex flex-col"
-      style={{ width: '220px', height: `${height}px` }}
-    >
+      <div
+        className="rounded-2xl border border-gray-700 bg-gray-900/60 backdrop-blur-sm p-5 flex flex-col"
+        style={{ width: '300px', height: `${height}px` }}
+      >
       <h2 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">
         {title}
       </h2>
