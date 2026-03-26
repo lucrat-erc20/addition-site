@@ -1,0 +1,68 @@
+name: Sync Blog Posts
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # runs every hour
+  workflow_dispatch:        # lets you trigger manually from Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout addition-site
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout Bux-Blog (private)
+        uses: actions/checkout@v4
+        with:
+          repository: lucrat-erc20/Bux-Blog
+          token: ${{ secrets.BLOG_CONTENT_TOKEN }}
+          path: bux-blog-source
+
+      - name: Copy blog posts to content/blog
+        run: |
+          mkdir -p content/blog
+          
+          # Loop through each dated folder in /blog
+          for dir in bux-blog-source/blog/*/; do
+            folder=$(basename "$dir")
+            
+            # Skip INDEX.md folder if it exists, and skip non-date folders
+            if [[ ! "$folder" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              continue
+            fi
+            
+            # Copy each .md file, rename to YYYY-MM-DD-filename.md
+            for file in "$dir"*.md; do
+              [ -f "$file" ] || continue
+              filename=$(basename "$file")
+              dest="content/blog/${folder}-${filename}"
+              
+              # Only copy if it doesn't already exist
+              if [ ! -f "$dest" ]; then
+                cp "$file" "$dest"
+                echo "Copied: $dest"
+              fi
+            done
+          done
+
+      - name: Check for new files
+        id: changes
+        run: |
+          git diff --quiet content/blog/ && git ls-files --others --exclude-standard content/blog/ | grep -q . && echo "changed=true" >> $GITHUB_OUTPUT || true
+          git status --short content/blog/ | grep -q . && echo "changed=true" >> $GITHUB_OUTPUT || true
+
+      - name: Commit and push if new posts found
+        run: |
+          git config user.name "Blog Sync Bot"
+          git config user.email "bot@addition.site"
+          git add content/blog/
+          if git diff --staged --quiet; then
+            echo "No new posts to sync"
+          else
+            git commit -m "blog: sync new posts from Bux-Blog"
+            git push
+          fi
