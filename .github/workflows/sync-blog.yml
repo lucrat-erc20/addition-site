@@ -16,7 +16,7 @@ jobs:
       - name: Checkout addition-site
         uses: actions/checkout@v4.2.2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ADDITION_SITE_TOKEN }}
 
       - name: Checkout Bux-Blog (private)
         uses: actions/checkout@v4.2.2

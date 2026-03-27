@@ -37,7 +37,11 @@ export default function Home() {
       <MobileNav />
 
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-bold text-white mb-2">ASMR Calculator</h1>
+        <h1 className="text-5xl font-bold mb-2 bg-clip-text text-transparent 
+             bg-gradient-to-r from-zinc-600 via-zinc-300 to-zinc-600 
+             drop-shadow-[0_0_20px_rgba(220,220,255,0.4)] tracking-tight">
+              ASMR Calculator
+        </h1>
         <p className="text-gray-500 text-sm tracking-widest uppercase">
           The most satisfying way to solve anything
         </p>
