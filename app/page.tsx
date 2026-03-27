@@ -9,7 +9,8 @@ import SideCard from './components/ui/SideCard';
 import MobileNav from './components/ui/MobileNav';
 
 const usefulTools = [
-  { label: '⚡ Full Amp Calculator', href: '/full-amp-interest' },
+  { label: '📝 Blog',                 href: '/blog' },
+  { label: '⚡ Full Amp Calculator',  href: '/full-amp-interest' },
   { label: 'Random Number Generator', href: '#' },
   { label: 'Password Generator',      href: '#' },
   { label: 'Unit Converter',          href: '#' },

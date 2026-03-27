@@ -17,6 +17,8 @@ const sections = [
   {
     title: 'Useful Tools',
     links: [
+      { label: '📝 Blog',                   href: '/blog' },
+      { label: '⚡ Full Amp Calculator',    href: '/full-amp-interest' },
       { label: 'Random Number Generator', href: '#' },
       { label: 'Password Generator', href: '#' },
       { label: 'Unit Converter', href: '#' },
