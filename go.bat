@@ -1,6 +1,9 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 
+REM Update local with any new blogs, or changes
+git pull origin main
+
 REM Stage everything first
 git add .
 
