@@ -28,20 +28,24 @@ jobs:
       - name: Copy blog posts to content/blog
         run: |
           mkdir -p content/blog
-          for dir in bux-blog-source/blog/*/; do
-            folder=$(basename "$dir")
-            if [[ ! "$folder" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-              continue
+          for file in bux-blog-source/blog/*.md; do
+            [ -f "$file" ] || continue
+            filename=$(basename "$file")
+
+            # Skip INDEX.md and any non-post files
+            [ "$filename" = "INDEX.md" ] && continue
+
+            # Skip files that don't start with a date prefix
+            [[ ! "$filename" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}- ]] && continue
+
+            # Strip leading date prefix (e.g. 2026-04-01-) to get clean slug filename
+            slug=$(echo "$filename" | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-//')
+
+            dest="content/blog/${slug}"
+            if [ ! -f "$dest" ]; then
+              cp "$file" "$dest"
+              echo "Copied: $filename → $slug"
             fi
-            for file in "$dir"*.md; do
-              [ -f "$file" ] || continue
-              filename=$(basename "$file")
-              dest="content/blog/${folder}-${filename}"
-              if [ ! -f "$dest" ]; then
-                cp "$file" "$dest"
-                echo "Copied: $dest"
-              fi
-            done
           done
 
       - name: Commit and push if new posts found
