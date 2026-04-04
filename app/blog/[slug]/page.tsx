@@ -4,6 +4,7 @@ import { getPost, getAllSlugs, formatDate } from '@/lib/blog';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import AdSlot from '@/components/AdSlot';
 
 // Pre-render all blog post pages at build time
 export async function generateStaticParams() {
@@ -29,40 +30,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// Insert an ad div every AD_INTERVAL paragraphs
-const AD_INTERVAL = 5;
-const AD_ID = 'container-38d4986bf6dea79bb7233722f8c2b358';
-
-function AdSlot() {
-  return (
-    <div style={{
-      margin: '32px 0',
-      padding: '16px',
-      background: '#0a0a0a',
-      border: '1px solid #1a1a1a',
-      borderRadius: 8,
-      minHeight: 90,
-    }}>
-      <div id={AD_ID} />
-    </div>
-  );
-}
-
 // Split markdown into paragraphs and inject ads every N paragraphs
+const AD_INTERVAL = 5;
+
 function renderContentWithAds(content: string) {
-  // Split on double newlines to get paragraph blocks
   const blocks = content.split(/\n\n+/);
   const result: React.ReactNode[] = [];
+  let adCount = 0;
 
   blocks.forEach((block, i) => {
-    // Render the block as pre-formatted (we use a simple prose renderer below)
     result.push(
       <div key={`block-${i}`} className="prose-block" dangerouslySetInnerHTML={{ __html: markdownToHtml(block) }} />
     );
 
-    // Insert ad every AD_INTERVAL blocks (but not at the very end)
     if ((i + 1) % AD_INTERVAL === 0 && i < blocks.length - 1) {
-      result.push(<AdSlot key={`ad-${i}`} />);
+      result.push(<AdSlot key={`ad-${i}`} index={adCount++} />);
     }
   });
 
@@ -84,7 +66,6 @@ function markdownToHtml(md: string): string {
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:#c8a84b">$1</a>')
     // Inline code
     .replace(/`(.+?)`/g, '<code style="background:#1a1a1a;padding:2px 6px;border-radius:3px;font-family:monospace;color:#c8a84b">$1</code>')
-    // Unordered lists
     // Unordered lists
     .replace(/^\- (.+)$/gm, '<li>$1</li>')
     .replace(/(<li>[^]*?<\/li>(\s*<li>[^]*?<\/li>)*)/g, '<ul style="margin:12px 0;padding-left:24px;color:#d1d5db">$1</ul>')
@@ -110,7 +91,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     headline: post.title,
     description: post.description,
     datePublished: post.date,
-    author: { '@type': 'Organization', name: 'ASMR Calculator' },
+    author: { '@type': 'Person', name: post.author || 'Bux' },
     publisher: { '@type': 'Organization', name: 'ASMR Calculator', url: 'https://addition.site' },
   };
 
@@ -161,7 +142,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </div>
 
         {/* Bottom ad */}
-        <AdSlot />
+        <AdSlot index={99} />
 
         {/* CTA back to calculator */}
         <div style={{
